@@ -1,8 +1,22 @@
 {
   "name": "aiida-rest-client",
-  "private": true,
   "version": "0.1.0",
   "description": "TypeScript client for the AiiDA REST API.",
+  "homepage": "https://github.com/aiidateam/aiida-rest-client",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aiidateam/aiida-rest-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aiidateam/aiida-rest-client/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "aiida",
+    "rest",
+    "api",
+    "typescript"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

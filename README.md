@@ -6,7 +6,13 @@ A REST Client for the AiiDA REST API.
 
 This package is currently internal and under active development.
 
-## Quick start
+## Installation
+
+```bash
+npm install aiida-rest-client
+```
+
+## Usage
 
 ```ts
 import { createAiidaRestClient } from "aiida-rest-client";
@@ -20,7 +26,9 @@ const status = await client.daemon.status();
 const workers = await client.daemon.worker();
 ```
 
-## Available daemon methods
+## Available routers
+
+### Daemon
 
 - `client.daemon.status()`
 - `client.daemon.worker()`
