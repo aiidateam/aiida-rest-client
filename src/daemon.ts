@@ -32,6 +32,12 @@ export class DaemonClient {
     });
   }
 
+  restart(): Promise<DaemonStatus> {
+    return this.http.requestJson<DaemonStatus>("/daemon/restart", {
+      method: "POST",
+    });
+  }
+
   increase(): Promise<DaemonStatus> {
     return this.http.requestJson<DaemonStatus>("/daemon/increase", {
       method: "POST",

@@ -4,7 +4,7 @@ A REST Client for the AiiDA REST API.
 
 ## Status
 
-This package is currently internal and under active development.
+**🚧 UNDER DEVELOPMENT 🚧**
 
 ## Installation
 
@@ -26,7 +26,7 @@ const status = await client.daemon.status();
 const workers = await client.daemon.worker();
 ```
 
-## Available routers
+## Available methods
 
 ### Daemon
 
@@ -34,5 +34,6 @@ const workers = await client.daemon.worker();
 - `client.daemon.worker()`
 - `client.daemon.start()`
 - `client.daemon.stop()`
+- `client.daemon.restart()`
 - `client.daemon.increase()`
 - `client.daemon.decrease()`

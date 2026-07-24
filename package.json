@@ -30,10 +30,10 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
     "check": "tsc -p tsconfig.json --noEmit",
-    "prepare": "npm run build",
-    "test": "vitest run"
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm test && npm run check && npm run build"
   },
   "devDependencies": {
     "typescript": "~6.0.2",
