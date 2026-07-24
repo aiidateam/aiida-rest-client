@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { AiidaRestApiError, createAiidaRestClient } from "../src";
+import { JsonApiError, createAiidaRestClient } from "../src";
 
 describe("daemon client", () => {
   afterEach(() => {
@@ -57,7 +57,7 @@ describe("daemon client", () => {
       await client.daemon.decrease();
       throw new Error("Expected daemon decrease to fail.");
     } catch (error) {
-      expect(error).toBeInstanceOf(AiidaRestApiError);
+      expect(error).toBeInstanceOf(JsonApiError);
       expect(error).toMatchObject({
         statusCode: 500,
         message: "The daemon is not running.",

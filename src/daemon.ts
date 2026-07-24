@@ -1,7 +1,11 @@
 import { HttpClient } from "./http";
-import type { DaemonStatus, DaemonWorkersByIdentifier } from "./types";
+import type {
+  DaemonClient,
+  DaemonStatus,
+  DaemonWorkersByIdentifier,
+} from "./types";
 
-export class DaemonClient {
+export class DaemonClientImpl implements DaemonClient {
   private readonly http: HttpClient;
 
   constructor(http: HttpClient) {

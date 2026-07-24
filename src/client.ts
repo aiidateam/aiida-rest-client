@@ -1,26 +1,23 @@
-import { DaemonClient } from "./daemon";
-import { HttpClient, type ClientConfig } from "./http";
+import { DaemonClientImpl } from "./daemon";
+import { HttpClient } from "./http";
+import type { ClientConfig, DaemonClient } from "./types";
+import type { AiidaRestClient } from "./types/client";
 
-export interface AiidaRestClientConfig extends ClientConfig {
-  apiPrefix?: string;
-}
-
-export class AiidaRestClient {
+class AiidaRestClientImpl implements AiidaRestClient {
   readonly daemon: DaemonClient;
 
-  constructor(config: AiidaRestClientConfig) {
+  constructor(config: ClientConfig) {
     const apiPrefix = (config.apiPrefix ?? "/v0").replace(/\/$/, "");
     const http = new HttpClient({
       ...config,
-      baseUrl: `${config.baseUrl.replace(/\/$/, "")}${apiPrefix}`,
+      baseUrl: `${config.baseUrl.replace(/\/$/, "")}`,
+      apiPrefix,
     });
 
-    this.daemon = new DaemonClient(http);
+    this.daemon = new DaemonClientImpl(http);
   }
 }
 
-export function createAiidaRestClient(
-  config: AiidaRestClientConfig,
-): AiidaRestClient {
-  return new AiidaRestClient(config);
+export function createAiidaRestClient(config: ClientConfig): AiidaRestClient {
+  return new AiidaRestClientImpl(config);
 }
