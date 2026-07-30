@@ -1,6 +1,6 @@
 {
   "name": "aiida-rest-client",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "TypeScript client for the AiiDA REST API.",
   "homepage": "https://github.com/aiidateam/aiida-rest-client",
   "repository": {
