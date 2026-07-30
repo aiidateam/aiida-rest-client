@@ -23,7 +23,7 @@ const client = createAiidaRestClient({
 });
 
 const status = await client.daemon.status();
-const workers = await client.daemon.worker();
+const workers = await client.daemon.workers();
 ```
 
 ## Available methods
@@ -31,7 +31,7 @@ const workers = await client.daemon.worker();
 ### Daemon
 
 - `client.daemon.status()`
-- `client.daemon.worker()`
+- `client.daemon.workers()`
 - `client.daemon.start()`
 - `client.daemon.stop()`
 - `client.daemon.restart()`
