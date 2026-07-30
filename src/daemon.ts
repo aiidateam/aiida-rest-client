@@ -1,16 +1,12 @@
-import { HttpClient } from "./http";
 import type {
   DaemonClient,
   DaemonStatus,
   DaemonWorkersByIdentifier,
+  JsonHttpClient,
 } from "./types";
 
 export class DaemonClientImpl implements DaemonClient {
-  private readonly http: HttpClient;
-
-  constructor(http: HttpClient) {
-    this.http = http;
-  }
+  constructor(private readonly http: JsonHttpClient) {}
 
   status(): Promise<DaemonStatus> {
     return this.http.requestJson<DaemonStatus>("/daemon/status", {
@@ -18,8 +14,8 @@ export class DaemonClientImpl implements DaemonClient {
     });
   }
 
-  worker(): Promise<DaemonWorkersByIdentifier> {
-    return this.http.requestJson<DaemonWorkersByIdentifier>("/daemon/worker", {
+  workers(): Promise<DaemonWorkersByIdentifier> {
+    return this.http.requestJson<DaemonWorkersByIdentifier>("/daemon/workers", {
       method: "GET",
     });
   }
@@ -42,14 +38,20 @@ export class DaemonClientImpl implements DaemonClient {
     });
   }
 
-  increase(): Promise<DaemonStatus> {
-    return this.http.requestJson<DaemonStatus>("/daemon/increase", {
+  increase(amount: number = 1): Promise<DaemonStatus> {
+    const params = new URLSearchParams({
+      amount: String(amount),
+    });
+    return this.http.requestJson<DaemonStatus>(`/daemon/increase?${params}`, {
       method: "POST",
     });
   }
 
-  decrease(): Promise<DaemonStatus> {
-    return this.http.requestJson<DaemonStatus>("/daemon/decrease", {
+  decrease(amount: number = 1): Promise<DaemonStatus> {
+    const params = new URLSearchParams({
+      amount: String(amount),
+    });
+    return this.http.requestJson<DaemonStatus>(`/daemon/decrease?${params}`, {
       method: "POST",
     });
   }

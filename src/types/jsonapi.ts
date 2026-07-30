@@ -1,9 +1,9 @@
-export interface JsonApiErrorObject {
+export interface JsonApiError {
   status?: string;
   title?: string;
   detail?: string;
 }
 
 export interface JsonApiDocument {
-  errors?: JsonApiErrorObject[];
+  errors?: JsonApiError[];
 }

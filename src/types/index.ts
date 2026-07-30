@@ -1,9 +1,5 @@
-export type { AiidaRestClient } from "./client";
-export type { ClientConfig } from "./config";
-export type {
-  DaemonClient,
-  DaemonStatus,
-  DaemonWorker,
-  DaemonWorkersByIdentifier,
-} from "./daemon";
-export type { JsonApiDocument, JsonApiErrorObject } from "./jsonapi";
+export type * from "./client";
+export type * from "./config";
+export type * from "./daemon";
+export type * from "./http";
+export type * from "./jsonapi";

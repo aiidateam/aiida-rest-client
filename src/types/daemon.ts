@@ -14,10 +14,10 @@ export type DaemonWorkersByIdentifier = Record<string, DaemonWorker>;
 
 export interface DaemonClient {
   status(): Promise<DaemonStatus>;
-  worker(): Promise<DaemonWorkersByIdentifier>;
+  workers(): Promise<DaemonWorkersByIdentifier>;
   start(): Promise<DaemonStatus>;
   stop(): Promise<DaemonStatus>;
   restart(): Promise<DaemonStatus>;
-  increase(): Promise<DaemonStatus>;
-  decrease(): Promise<DaemonStatus>;
+  increase(amount?: number): Promise<DaemonStatus>;
+  decrease(amount?: number): Promise<DaemonStatus>;
 }

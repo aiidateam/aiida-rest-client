@@ -1,67 +1,172 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { JsonApiError, createAiidaRestClient } from "../src";
+import { DaemonClientImpl } from "../src/daemon";
+import type {
+  DaemonStatus,
+  DaemonWorkersByIdentifier,
+  JsonHttpClient,
+} from "../src/types";
 
-describe("daemon client", () => {
+function createHttpMock() {
+  return {
+    requestJson: vi.fn(),
+  } satisfies JsonHttpClient;
+}
+
+describe("DaemonClientImpl", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  test("requests daemon status from configured base URL", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ running: true, num_workers: 2 }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+  test.each([
+    {
+      name: "status",
+      invoke: (client: DaemonClientImpl) => client.status(),
+      path: "/daemon/status",
+      method: "GET",
+      response: {
+        running: true,
+        num_workers: 2,
+      } satisfies DaemonStatus,
+    },
+    {
+      name: "start",
+      invoke: (client: DaemonClientImpl) => client.start(),
+      path: "/daemon/start",
+      method: "POST",
+      response: {
+        running: true,
+        num_workers: 1,
+      } satisfies DaemonStatus,
+    },
+    {
+      name: "stop",
+      invoke: (client: DaemonClientImpl) => client.stop(),
+      path: "/daemon/stop",
+      method: "POST",
+      response: {
+        running: false,
+        num_workers: null,
+      } satisfies DaemonStatus,
+    },
+    {
+      name: "restart",
+      invoke: (client: DaemonClientImpl) => client.restart(),
+      path: "/daemon/restart",
+      method: "POST",
+      response: {
+        running: true,
+        num_workers: 1,
+      } satisfies DaemonStatus,
+    },
+  ])("requests daemon $name", async ({ invoke, path, method, response }) => {
+    const http = createHttpMock();
+    http.requestJson.mockResolvedValue(response);
 
-    const client = createAiidaRestClient({
-      baseUrl: "https://api.example.org",
-      apiPrefix: "/v0",
+    const client = new DaemonClientImpl(http);
+
+    await expect(invoke(client)).resolves.toEqual(response);
+
+    expect(http.requestJson).toHaveBeenCalledOnce();
+    expect(http.requestJson).toHaveBeenCalledWith(path, {
+      method,
     });
-    const result = await client.daemon.status();
-
-    expect(result).toEqual({ running: true, num_workers: 2 });
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.example.org/v0/daemon/status",
-      expect.objectContaining({ method: "GET" }),
-    );
   });
 
-  test("raises typed error on JSON:API failures", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          errors: [
-            {
-              status: "500",
-              title: "DaemonException",
-              detail: "The daemon is not running.",
-            },
-          ],
-        }),
-        {
-          status: 500,
-          headers: { "content-type": "application/json" },
-        },
-      ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+  test("requests daemon workers", async () => {
+    const response = {
+      "1234": {
+        pid: 1234,
+        mem: 0.7,
+        cpu: 0.0,
+        started: 1785410932.4201467,
+      },
+    } satisfies DaemonWorkersByIdentifier;
 
-    const client = createAiidaRestClient({
-      baseUrl: "https://api.example.org",
+    const http = createHttpMock();
+    http.requestJson.mockResolvedValue(response);
+
+    const client = new DaemonClientImpl(http);
+
+    await expect(client.workers()).resolves.toEqual(response);
+
+    expect(http.requestJson).toHaveBeenCalledOnce();
+    expect(http.requestJson).toHaveBeenCalledWith("/daemon/workers", {
+      method: "GET",
+    });
+  });
+
+  test.each([
+    {
+      name: "increase",
+      invoke: (client: DaemonClientImpl) => client.increase(2),
+      path: "/daemon/increase?amount=2",
+      response: {
+        running: true,
+        num_workers: 3,
+      } satisfies DaemonStatus,
+    },
+    {
+      name: "decrease",
+      invoke: (client: DaemonClientImpl) => client.decrease(2),
+      path: "/daemon/decrease?amount=2",
+      response: {
+        running: true,
+        num_workers: 1,
+      } satisfies DaemonStatus,
+    },
+  ])(
+    "requests daemon $name with an explicit amount",
+    async ({ invoke, path, response }) => {
+      const http = createHttpMock();
+      http.requestJson.mockResolvedValue(response);
+
+      const client = new DaemonClientImpl(http);
+
+      await expect(invoke(client)).resolves.toEqual(response);
+
+      expect(http.requestJson).toHaveBeenCalledOnce();
+      expect(http.requestJson).toHaveBeenCalledWith(path, {
+        method: "POST",
+      });
+    },
+  );
+
+  test.each([
+    {
+      name: "increase",
+      invoke: (client: DaemonClientImpl) => client.increase(),
+      path: "/daemon/increase?amount=1",
+    },
+    {
+      name: "decrease",
+      invoke: (client: DaemonClientImpl) => client.decrease(),
+      path: "/daemon/decrease?amount=1",
+    },
+  ])("uses one as the default amount for $name", async ({ invoke, path }) => {
+    const http = createHttpMock();
+    http.requestJson.mockResolvedValue({
+      running: true,
+      num_workers: 1,
     });
 
-    try {
-      await client.daemon.decrease();
-      throw new Error("Expected daemon decrease to fail.");
-    } catch (error) {
-      expect(error).toBeInstanceOf(JsonApiError);
-      expect(error).toMatchObject({
-        statusCode: 500,
-        message: "The daemon is not running.",
-      });
-    }
+    const client = new DaemonClientImpl(http);
+
+    await invoke(client);
+
+    expect(http.requestJson).toHaveBeenCalledWith(path, {
+      method: "POST",
+    });
+  });
+
+  test("propagates errors from the HTTP client", async () => {
+    const error = new Error("Request failed");
+
+    const http = createHttpMock();
+    http.requestJson.mockRejectedValue(error);
+
+    const client = new DaemonClientImpl(http);
+
+    await expect(client.stop()).rejects.toBe(error);
   });
 });
