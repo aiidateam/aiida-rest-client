@@ -16,8 +16,9 @@ npm install aiida-rest-client
 
 ```ts
 import { createAiidaRestClient } from "aiida-rest-client";
+import type { AiidaRestClient } from "aiida-rest-client/types";
 
-const client = createAiidaRestClient({
+const client: AiidaRestClient = createAiidaRestClient({
   baseUrl: "http://127.0.0.1:8000",
   apiPrefix: "/v0",
 });
@@ -25,6 +26,9 @@ const client = createAiidaRestClient({
 const status = await client.daemon.status();
 const workers = await client.daemon.workers();
 ```
+
+Runtime values are exported from `aiida-rest-client`; public TypeScript types
+are exported from `aiida-rest-client/types`.
 
 ## Available methods
 
