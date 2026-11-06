@@ -81,10 +81,46 @@ const nodes = await client.nodes.list(
 - `client.nodes.repoMetadata(identifier, include)`
 - `client.nodes.repoContents(identifier, filename)`
 - `client.nodes.download(identifier, format, options)`
+- `client.nodes.create(request)`
 
 Repository-content and node-download methods return a browser `Blob`; the
 remaining methods follow the response shapes of the AiiDA REST API nodes
 read router.
+
+### Computers
+
+- `client.computers.schema({ which })`
+- `client.computers.projections()`
+- `client.computers.list(options, requestOptions)`
+- `client.computers.get(identifier, include, requestOptions)`
+- `client.computers.metadata(identifier, include, requestOptions)`
+
+### Users
+
+- `client.users.schema({ which })`
+- `client.users.projections()`
+- `client.users.list(options, requestOptions)`
+- `client.users.get(identifier, include, requestOptions)`
+
+User identifiers are integer user IDs.
+
+### Groups
+
+- `client.groups.schema({ which })`
+- `client.groups.projections()`
+- `client.groups.list(options, requestOptions)`
+- `client.groups.get(identifier, include, requestOptions)`
+- `client.groups.user(identifier)`
+- `client.groups.nodes(identifier, options, requestOptions)`
+- `client.groups.extras(identifier, include, requestOptions)`
+
+### Server
+
+- `client.server.info()`
+- `client.server.endpoints()`
+- `client.server.endpointsTable()`
+
+`endpointsTable()` returns the server's HTML endpoint table as a string.
 
 ### Processes
 

@@ -1,7 +1,12 @@
 export type * from "./client";
 export type * from "./config";
+export type * from "./computers";
 export type * from "./daemon";
+export type * from "./entities";
+export type * from "./groups";
 export type * from "./http";
 export type * from "./jsonapi";
 export type * from "./nodes";
 export type * from "./processes";
+export type * from "./server";
+export type * from "./users";

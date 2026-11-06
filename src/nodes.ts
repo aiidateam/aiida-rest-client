@@ -24,33 +24,12 @@ import type {
 
 import type { AiidaHttpClient } from "./types";
 import type { RequestOptions } from "./types/config";
-
-function collectionQuery(options: NodeListOptions = {}): string {
-  const params = new URLSearchParams();
-  if (options.filters) params.set("filters", JSON.stringify(options.filters));
-  if (options.orderBy) params.set("order_by", JSON.stringify(options.orderBy));
-  if (options.page !== undefined) params.set("page", String(options.page));
-  if (options.pageSize !== undefined)
-    params.set("page_size", String(options.pageSize));
-  if (options.offset !== undefined)
-    params.set("offset", String(options.offset));
-  if (options.include?.length) params.set("include", options.include.join(","));
-  return params.toString();
-}
-
-function includeQuery(include?: string[]): string {
-  if (!include?.length) return "";
-  return `?${new URLSearchParams({ include: include.join(",") })}`;
-}
-
-function nodePath(identifier: NodeIdentifier): string {
-  return `/nodes/${encodeURIComponent(String(identifier))}`;
-}
-
-function collectionPath(path: string, options?: NodeListOptions): string {
-  const query = collectionQuery(options);
-  return query ? `${path}?${query}` : path;
-}
+import {
+  collectionPath,
+  collectionQuery,
+  includeQuery,
+  resourcePath,
+} from "./query";
 
 export class NodesClientImpl implements NodesClient {
   constructor(private readonly http: AiidaHttpClient) {}
@@ -98,7 +77,9 @@ export class NodesClientImpl implements NodesClient {
     );
   }
 
-  downloadFormats(requestOptions?: RequestOptions): Promise<NodeDownloadFormats> {
+  downloadFormats(
+    requestOptions?: RequestOptions,
+  ): Promise<NodeDownloadFormats> {
     return this.http.requestJson(
       "/nodes/download_formats",
       { method: "GET" },
@@ -118,9 +99,13 @@ export class NodesClientImpl implements NodesClient {
     options?: NodeListOptions,
     requestOptions?: RequestOptions,
   ): Promise<JsonApiCollectionDocument<NodeResource>> {
-    return this.http.requestJson(collectionPath("/nodes", options), {
-      method: "GET",
-    }, requestOptions);
+    return this.http.requestJson(
+      collectionPath("/nodes", options),
+      {
+        method: "GET",
+      },
+      requestOptions,
+    );
   }
 
   get(
@@ -129,7 +114,7 @@ export class NodesClientImpl implements NodesClient {
     requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeResource>> {
     return this.http.requestJson(
-      `${nodePath(identifier)}${includeQuery(include)}`,
+      `${resourcePath("nodes", identifier)}${includeQuery(include)}`,
       { method: "GET" },
       requestOptions,
     );
@@ -140,7 +125,7 @@ export class NodesClientImpl implements NodesClient {
     requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeRelatedResource>> {
     return this.http.requestJson(
-      `${nodePath(identifier)}/user`,
+      `${resourcePath("nodes", identifier)}/user`,
       { method: "GET" },
       requestOptions,
     );
@@ -151,7 +136,7 @@ export class NodesClientImpl implements NodesClient {
     requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeRelatedResource>> {
     return this.http.requestJson(
-      `${nodePath(identifier)}/computer`,
+      `${resourcePath("nodes", identifier)}/computer`,
       { method: "GET" },
       requestOptions,
     );
@@ -163,7 +148,7 @@ export class NodesClientImpl implements NodesClient {
     requestOptions?: RequestOptions,
   ): Promise<JsonApiCollectionDocument<NodeRelatedResource>> {
     return this.http.requestJson(
-      collectionPath(`${nodePath(identifier)}/groups`, options),
+      collectionPath(`${resourcePath("nodes", identifier)}/groups`, options),
       { method: "GET" },
       requestOptions,
     );
@@ -175,7 +160,7 @@ export class NodesClientImpl implements NodesClient {
     requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeAttributesResource>> {
     return this.http.requestJson(
-      `${nodePath(identifier)}/attributes${includeQuery(include)}`,
+      `${resourcePath("nodes", identifier)}/attributes${includeQuery(include)}`,
       { method: "GET" },
       requestOptions,
     );
@@ -187,7 +172,7 @@ export class NodesClientImpl implements NodesClient {
     requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeExtrasResource>> {
     return this.http.requestJson(
-      `${nodePath(identifier)}/extras${includeQuery(include)}`,
+      `${resourcePath("nodes", identifier)}/extras${includeQuery(include)}`,
       { method: "GET" },
       requestOptions,
     );
@@ -202,7 +187,7 @@ export class NodesClientImpl implements NodesClient {
     const params = new URLSearchParams(collectionQuery(options));
     params.set("direction", direction);
     return this.http.requestJson(
-      `${nodePath(identifier)}/links?${params}`,
+      `${resourcePath("nodes", identifier)}/links?${params}`,
       { method: "GET" },
       requestOptions,
     );
@@ -214,7 +199,7 @@ export class NodesClientImpl implements NodesClient {
     requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeRepoMetadataResource>> {
     return this.http.requestJson(
-      `${nodePath(identifier)}/repo/metadata${includeQuery(include)}`,
+      `${resourcePath("nodes", identifier)}/repo/metadata${includeQuery(include)}`,
       { method: "GET" },
       requestOptions,
     );
@@ -229,7 +214,7 @@ export class NodesClientImpl implements NodesClient {
     if (filename) params.set("filename", filename);
     const query = params.toString();
     return this.http.requestBlob(
-      `${nodePath(identifier)}/repo/contents${query ? `?${query}` : ""}`,
+      `${resourcePath("nodes", identifier)}/repo/contents${query ? `?${query}` : ""}`,
       { method: "GET" },
       requestOptions,
     );
@@ -244,7 +229,7 @@ export class NodesClientImpl implements NodesClient {
     const params = new URLSearchParams({ format });
     if (options) params.set("options", JSON.stringify(options));
     return this.http.requestBlob(
-      `${nodePath(identifier)}/download?${params}`,
+      `${resourcePath("nodes", identifier)}/download?${params}`,
       { method: "GET" },
       requestOptions,
     );
@@ -254,10 +239,14 @@ export class NodesClientImpl implements NodesClient {
     request: NodeCreateRequest,
     requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeResource>> {
-    return this.http.requestJson("/nodes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-    }, requestOptions);
+    return this.http.requestJson(
+      "/nodes",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      },
+      requestOptions,
+    );
   }
 }
