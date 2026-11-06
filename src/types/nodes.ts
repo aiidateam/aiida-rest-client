@@ -97,6 +97,13 @@ export type NodeRepoMetadataEntry =
 export type NodeRepoMetadata = Record<string, NodeRepoMetadataEntry>;
 export type NodeRepoMetadataResource = JsonApiResource<NodeRepoMetadata>;
 
+export interface NodeCreateRequest {
+  node_type: string;
+  label?: string;
+  description?: string;
+  attributes: Record<string, JsonValue>;
+}
+
 export interface NodesClient {
   schema(options?: NodeSchemaOptions): Promise<NodeSchema>;
   projections(nodeType?: string): Promise<string[]>;
@@ -143,4 +150,7 @@ export interface NodesClient {
     format: string,
     options?: Record<string, JsonValue>,
   ): Promise<Blob>;
+  create(
+    request: NodeCreateRequest,
+  ): Promise<JsonApiResourceDocument<NodeResource>>;
 }

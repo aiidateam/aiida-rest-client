@@ -5,6 +5,7 @@ import type {
 
 import type {
   NodeAttributesResource,
+  NodeCreateRequest,
   NodeDownloadFormats,
   NodeExtrasResource,
   NodeIdentifier,
@@ -198,6 +199,16 @@ export class NodesClientImpl implements NodesClient {
     if (options) params.set("options", JSON.stringify(options));
     return this.http.requestBlob(`${nodePath(identifier)}/download?${params}`, {
       method: "GET",
+    });
+  }
+
+  create(
+    request: NodeCreateRequest,
+  ): Promise<JsonApiResourceDocument<NodeResource>> {
+    return this.http.requestJson("/nodes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
     });
   }
 }

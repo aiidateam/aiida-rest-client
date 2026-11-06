@@ -109,17 +109,22 @@ describe("AiidaRestClient nodes", () => {
       requestUrls.push(input);
       const binaryResponse =
         input.includes("/repo/contents") || input.includes("/download");
-      return new Response(binaryResponse ? "bytes" : JSON.stringify({ data: [] }), {
-        status: 200,
-        headers: {
-          "content-type": binaryResponse
-            ? "application/octet-stream"
-            : "application/vnd.api+json",
+      return new Response(
+        binaryResponse ? "bytes" : JSON.stringify({ data: [] }),
+        {
+          status: 200,
+          headers: {
+            "content-type": binaryResponse
+              ? "application/octet-stream"
+              : "application/vnd.api+json",
+          },
         },
-      });
+      );
     });
     vi.stubGlobal("fetch", fetchMock);
-    const client = createAiidaRestClient({ baseUrl: "https://api.example.org" });
+    const client = createAiidaRestClient({
+      baseUrl: "https://api.example.org",
+    });
 
     await client.nodes.schema({
       nodeType: "data.core.structure.StructureData.",
@@ -185,7 +190,9 @@ describe("AiidaRestClient nodes", () => {
       );
     });
     vi.stubGlobal("fetch", fetchMock);
-    const client = createAiidaRestClient({ baseUrl: "https://api.example.org" });
+    const client = createAiidaRestClient({
+      baseUrl: "https://api.example.org",
+    });
 
     await client.nodes.schema({
       nodeType: "data.core.structure.StructureData.",
@@ -230,5 +237,59 @@ describe("AiidaRestClient nodes", () => {
       "/v0/nodes/123/repo/contents?filename=path%2Fstructure.json",
       "/v0/nodes/123/download?format=archive&options=%7B%22include%22%3A%5B%22groups%22%5D%7D",
     ]);
+  });
+
+  test("creates nodes from write attributes", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            id: "created-structure-uuid",
+            type: "nodes",
+            attributes: { pk: 12, label: "Edited structure" },
+          },
+        }),
+        {
+          status: 200,
+          headers: { "content-type": "application/vnd.api+json" },
+        },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createAiidaRestClient({
+      baseUrl: "https://api.example.org",
+    });
+    const request = {
+      node_type: "data.core.structure.StructureData.",
+      label: "Edited structure",
+      attributes: {
+        cell: [
+          [1, 0, 0],
+          [0, 1, 0],
+          [0, 0, 1],
+        ],
+        pbc1: true,
+        pbc2: true,
+        pbc3: true,
+        kinds: [{ name: "Si", symbols: ["Si"], weights: [1] }],
+        sites: [{ kind_name: "Si", position: [0, 0, 0] }],
+      },
+    };
+
+    await expect(client.nodes.create(request)).resolves.toMatchObject({
+      data: { id: "created-structure-uuid" },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.example.org/v0/nodes",
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
+      }),
+    );
   });
 });
