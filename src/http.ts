@@ -1,25 +1,74 @@
 import { JsonApiError } from "./jsonapi";
-import type { AiidaHttpClient, ClientConfig, JsonApiDocument } from "./types";
+import type {
+  AiidaHttpClient,
+  ClientConfig,
+  JsonApiDocument,
+  RequestOptions,
+} from "./types";
+
+interface RequestAbort {
+  signal: AbortSignal;
+  timedOut(): boolean;
+  cleanup(): void;
+}
+
+function createRequestAbort(
+  timeout: number,
+  externalSignal?: AbortSignal,
+): RequestAbort {
+  const controller = new AbortController();
+  let timeoutElapsed = false;
+  const abortFromCaller = () => {
+    if (!controller.signal.aborted) {
+      controller.abort(externalSignal?.reason);
+    }
+  };
+
+  if (externalSignal?.aborted) {
+    abortFromCaller();
+  } else {
+    externalSignal?.addEventListener("abort", abortFromCaller, { once: true });
+  }
+
+  const timeoutId = setTimeout(() => {
+    if (!controller.signal.aborted) {
+      timeoutElapsed = true;
+      controller.abort();
+    }
+  }, timeout);
+
+  return {
+    signal: controller.signal,
+    timedOut: () => timeoutElapsed,
+    cleanup: () => {
+      clearTimeout(timeoutId);
+      externalSignal?.removeEventListener("abort", abortFromCaller);
+    },
+  };
+}
 
 export class HttpClient implements AiidaHttpClient {
   private readonly baseUrl: string;
   private readonly apiPrefix: string;
-  private readonly timeoutMs: number;
+  private readonly timeout: number;
   private readonly headers: Record<string, string>;
 
   constructor(config: ClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.apiPrefix = (config.apiPrefix ?? "/v0").replace(/\/$/, "");
-    this.timeoutMs = config.timeoutMs ?? 30_000;
+    this.timeout = config.timeout ?? 30_000;
     this.headers = config.headers ?? {};
   }
 
   async requestJson<TResponse>(
     path: string,
     init?: RequestInit,
+    requestOptions?: RequestOptions,
   ): Promise<TResponse> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+    const requestAbort = createRequestAbort(
+      requestOptions?.timeout ?? this.timeout,
+      requestOptions?.signal,
+    );
 
     try {
       const response = await fetch(`${this.baseUrl}${this.apiPrefix}${path}`, {
@@ -27,9 +76,10 @@ export class HttpClient implements AiidaHttpClient {
         headers: {
           Accept: "application/json",
           ...this.headers,
+          ...(requestOptions?.headers ?? {}),
           ...(init?.headers ?? {}),
         },
-        signal: controller.signal,
+        signal: requestAbort.signal,
       });
 
       const contentType = response.headers.get("content-type") ?? "";
@@ -46,19 +96,29 @@ export class HttpClient implements AiidaHttpClient {
         throw error;
       }
 
-      if (error instanceof Error && error.name === "AbortError") {
+      if (
+        requestAbort.timedOut() &&
+        error instanceof Error &&
+        error.name === "AbortError"
+      ) {
         throw new JsonApiError("Request timed out.", 408);
       }
 
       throw error;
     } finally {
-      clearTimeout(timeoutId);
+      requestAbort.cleanup();
     }
   }
 
-  async requestBlob(path: string, init?: RequestInit): Promise<Blob> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+  async requestBlob(
+    path: string,
+    init?: RequestInit,
+    requestOptions?: RequestOptions,
+  ): Promise<Blob> {
+    const requestAbort = createRequestAbort(
+      requestOptions?.timeout ?? this.timeout,
+      requestOptions?.signal,
+    );
 
     try {
       const response = await fetch(`${this.baseUrl}${this.apiPrefix}${path}`, {
@@ -66,13 +126,16 @@ export class HttpClient implements AiidaHttpClient {
         headers: {
           Accept: "*/*",
           ...this.headers,
+          ...(requestOptions?.headers ?? {}),
           ...(init?.headers ?? {}),
         },
-        signal: controller.signal,
+        signal: requestAbort.signal,
       });
 
       const contentType = response.headers.get("content-type") ?? "";
-      const payload = this.isJson(contentType) ? await response.json() : undefined;
+      const payload = this.isJson(contentType)
+        ? await response.json()
+        : undefined;
       if (!response.ok) {
         throw this.createError(response.status, payload);
       }
@@ -83,13 +146,17 @@ export class HttpClient implements AiidaHttpClient {
         throw error;
       }
 
-      if (error instanceof Error && error.name === "AbortError") {
+      if (
+        requestAbort.timedOut() &&
+        error instanceof Error &&
+        error.name === "AbortError"
+      ) {
         throw new JsonApiError("Request timed out.", 408);
       }
 
       throw error;
     } finally {
-      clearTimeout(timeoutId);
+      requestAbort.cleanup();
     }
   }
 
@@ -103,7 +170,8 @@ export class HttpClient implements AiidaHttpClient {
     const errors = (payload as JsonApiDocument | undefined)?.errors;
     const detail = errors?.[0]?.detail;
     const title = errors?.[0]?.title;
-    const message = detail ?? title ?? `Request failed with status ${statusCode}`;
+    const message =
+      detail ?? title ?? `Request failed with status ${statusCode}`;
     return new JsonApiError(message, statusCode, payload, errors);
   }
 }

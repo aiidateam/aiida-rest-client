@@ -4,6 +4,8 @@ import type {
   JsonApiResourceDocument,
 } from "./jsonapi";
 
+import type { RequestOptions } from "./config";
+
 export type JsonValue =
   | string
   | number
@@ -105,52 +107,94 @@ export interface NodeCreateRequest {
 }
 
 export interface NodesClient {
-  schema(options?: NodeSchemaOptions): Promise<NodeSchema>;
-  projections(nodeType?: string): Promise<string[]>;
-  statistics(user?: number): Promise<NodeStatistics>;
-  downloadFormats(): Promise<NodeDownloadFormats>;
-  types(): Promise<NodeType[]>;
+  schema(
+    options?: NodeSchemaOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<NodeSchema>;
+
+  projections(
+    nodeType?: string,
+    requestOptions?: RequestOptions,
+  ): Promise<string[]>;
+
+  statistics(
+    user?: number,
+    requestOptions?: RequestOptions,
+  ): Promise<NodeStatistics>;
+
+  downloadFormats(
+    requestOptions?: RequestOptions,
+  ): Promise<NodeDownloadFormats>;
+
+  types(requestOptions?: RequestOptions): Promise<NodeType[]>;
+
   list(
     options?: NodeListOptions,
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiCollectionDocument<NodeResource>>;
+
   get(
     identifier: NodeIdentifier,
     include?: string[],
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeResource>>;
+
   user(
     identifier: NodeIdentifier,
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeRelatedResource>>;
+
   computer(
     identifier: NodeIdentifier,
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeRelatedResource>>;
+
   groups(
     identifier: NodeIdentifier,
     options?: NodeListOptions,
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiCollectionDocument<NodeRelatedResource>>;
+
   attributes(
     identifier: NodeIdentifier,
     include?: string[],
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeAttributesResource>>;
+
   extras(
     identifier: NodeIdentifier,
     include?: string[],
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeExtrasResource>>;
+
   links(
     identifier: NodeIdentifier,
     direction: "incoming" | "outgoing",
     options?: NodeListOptions,
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiCollectionDocument<NodeLinkResource>>;
+
   repoMetadata(
     identifier: NodeIdentifier,
     include?: string[],
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeRepoMetadataResource>>;
-  repoContents(identifier: NodeIdentifier, filename?: string): Promise<Blob>;
+
+  repoContents(
+    identifier: NodeIdentifier,
+    filename?: string,
+    requestOptions?: RequestOptions,
+  ): Promise<Blob>;
+
   download(
     identifier: NodeIdentifier,
     format: string,
     options?: Record<string, JsonValue>,
+    requestOptions?: RequestOptions,
   ): Promise<Blob>;
+
   create(
     request: NodeCreateRequest,
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeResource>>;
 }

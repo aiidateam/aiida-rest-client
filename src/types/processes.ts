@@ -1,6 +1,7 @@
 import type { JsonValue } from "./nodes";
 import type { JsonApiResourceDocument } from "./jsonapi";
 import type { NodeResource } from "./nodes";
+import type { RequestOptions } from "./config";
 
 export type ProcessInputs = Record<string, JsonValue>;
 
@@ -14,5 +15,6 @@ export interface ProcessSubmission {
 export interface ProcessesClient {
   submit(
     submission: ProcessSubmission,
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeResource>>;
 }

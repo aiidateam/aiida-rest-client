@@ -28,6 +28,10 @@ describe("AiidaRestClient processes", () => {
     const client = createAiidaRestClient({
       baseUrl: "https://api.example.org",
     });
+    const requestOptions = {
+      timeout: 4_200,
+      headers: { "X-Request-ID": "submit-workflow" },
+    };
 
     await expect(
       client.processes.submit({
@@ -35,7 +39,7 @@ describe("AiidaRestClient processes", () => {
         label: "Relax silicon",
         description: "Test submission",
         inputs: { "structure.uuid": "structure-uuid" },
-      }),
+      }, requestOptions),
     ).resolves.toMatchObject({ data: { id: "process-uuid" } });
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -45,6 +49,7 @@ describe("AiidaRestClient processes", () => {
         headers: expect.objectContaining({
           Accept: "application/json",
           "Content-Type": "application/json",
+          "X-Request-ID": "submit-workflow",
         }),
         body: JSON.stringify({
           label: "Relax silicon",

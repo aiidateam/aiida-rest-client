@@ -276,7 +276,14 @@ describe("AiidaRestClient nodes", () => {
       },
     };
 
-    await expect(client.nodes.create(request)).resolves.toMatchObject({
+    const requestOptions = {
+      timeout: 2_500,
+      headers: { "X-Request-ID": "create-structure" },
+    };
+
+    await expect(
+      client.nodes.create(request, requestOptions),
+    ).resolves.toMatchObject({
       data: { id: "created-structure-uuid" },
     });
 
@@ -287,6 +294,7 @@ describe("AiidaRestClient nodes", () => {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
+          "X-Request-ID": "create-structure",
         },
         body: JSON.stringify(request),
       }),

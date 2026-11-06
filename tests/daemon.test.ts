@@ -70,7 +70,7 @@ describe("DaemonClientImpl", () => {
     expect(http.requestJson).toHaveBeenCalledOnce();
     expect(http.requestJson).toHaveBeenCalledWith(path, {
       method,
-    });
+    }, undefined);
   });
 
   test("requests daemon workers", async () => {
@@ -93,7 +93,7 @@ describe("DaemonClientImpl", () => {
     expect(http.requestJson).toHaveBeenCalledOnce();
     expect(http.requestJson).toHaveBeenCalledWith("/daemon/workers", {
       method: "GET",
-    });
+    }, undefined);
   });
 
   test.each([
@@ -128,7 +128,7 @@ describe("DaemonClientImpl", () => {
       expect(http.requestJson).toHaveBeenCalledOnce();
       expect(http.requestJson).toHaveBeenCalledWith(path, {
         method: "POST",
-      });
+      }, undefined);
     },
   );
 
@@ -156,7 +156,27 @@ describe("DaemonClientImpl", () => {
 
     expect(http.requestJson).toHaveBeenCalledWith(path, {
       method: "POST",
+    }, undefined);
+  });
+
+  test("forwards request options to daemon endpoints", async () => {
+    const requestOptions = {
+      timeout: 1_500,
+      headers: { "X-Request-ID": "status-check" },
+    };
+    const http = createHttpMock();
+    http.requestJson.mockResolvedValue({
+      running: true,
+      num_workers: 1,
     });
+
+    await new DaemonClientImpl(http).status(requestOptions);
+
+    expect(http.requestJson).toHaveBeenCalledWith(
+      "/daemon/status",
+      { method: "GET" },
+      requestOptions,
+    );
   });
 
   test("propagates errors from the HTTP client", async () => {

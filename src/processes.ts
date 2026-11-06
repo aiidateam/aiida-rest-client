@@ -1,12 +1,14 @@
 import type { JsonApiResourceDocument, JsonHttpClient } from "./types";
 import type { NodeResource } from "./types/nodes";
 import type { ProcessSubmission, ProcessesClient } from "./types/processes";
+import type { RequestOptions } from "./types/config";
 
 export class ProcessesClientImpl implements ProcessesClient {
   constructor(private readonly http: JsonHttpClient) {}
 
   submit(
     submission: ProcessSubmission,
+    requestOptions?: RequestOptions,
   ): Promise<JsonApiResourceDocument<NodeResource>> {
     const submittedMetadata = submission.inputs.metadata;
     if (
@@ -43,6 +45,6 @@ export class ProcessesClientImpl implements ProcessesClient {
         entry_point: submission.entryPoint,
         inputs,
       }),
-    });
+    }, requestOptions);
   }
 }

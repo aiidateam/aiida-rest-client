@@ -21,14 +21,35 @@ import type { AiidaRestClient } from "aiida-rest-client/types";
 const client: AiidaRestClient = createAiidaRestClient({
   baseUrl: "http://127.0.0.1:8000",
   apiPrefix: "/v0",
+  timeout: 30_000,
+  headers: { "X-Client-Name": "example" },
 });
 
-const status = await client.daemon.status();
+const status = await client.daemon.status({
+  timeout: 5_000,
+  headers: { "X-Request-ID": "status-check" },
+});
 const workers = await client.daemon.workers();
 ```
 
 Runtime values are exported from `aiida-rest-client`; public TypeScript types
 are exported from `aiida-rest-client/types`.
+
+Every endpoint accepts an optional `RequestOptions` object as its last
+argument. It can override the client-level `timeout` (in milliseconds), set
+headers for that request, and provide an `AbortSignal` to cancel it. Client-level
+headers are defaults; per-request headers override them, while endpoint-required
+headers such as `Content-Type` take precedence. Timeout errors are reported as
+HTTP-style 408 `JsonApiError`s; caller cancellation propagates the abort error.
+
+Endpoints that already take arguments keep those arguments first. For example:
+
+```ts
+const nodes = await client.nodes.list(
+  { filters: { node_type: { "==": "data.core.structure.StructureData." } } },
+  { timeout: 10_000 },
+);
+```
 
 ## Available methods
 
